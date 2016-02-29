@@ -58,10 +58,12 @@ install_resource()
   esac
 }
 if [[ "$CONFIGURATION" == "Debug" ]]; then
-  install_resource "AMap2DMap/MAMapKit.framework/AMap.bundle"
+  install_resource "AMapNavi/AMapNaviKit.framework/Versions/1.5.0.3533b29/Resources/AMap.bundle"
+  install_resource "AMapNavi/AMapNaviKit.framework/Versions/1.5.0.3533b29/Resources/AMapNavi.bundle"
 fi
 if [[ "$CONFIGURATION" == "Release" ]]; then
-  install_resource "AMap2DMap/MAMapKit.framework/AMap.bundle"
+  install_resource "AMapNavi/AMapNaviKit.framework/Versions/1.5.0.3533b29/Resources/AMap.bundle"
+  install_resource "AMapNavi/AMapNaviKit.framework/Versions/1.5.0.3533b29/Resources/AMapNavi.bundle"
 fi
 
 mkdir -p "${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"

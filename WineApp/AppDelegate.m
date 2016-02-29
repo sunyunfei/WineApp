@@ -8,7 +8,7 @@
 
 #import "AppDelegate.h"
 #import "BaseTabbarVC.h"
-#import <MAMapKit/MAMapKit.h>
+#import <AMapNaviKit/MAMapKit.h>
 #import <AMapSearchKit/AMapSearchKit.h>
 @interface AppDelegate ()
 

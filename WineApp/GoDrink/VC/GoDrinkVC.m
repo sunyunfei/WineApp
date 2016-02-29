@@ -7,15 +7,15 @@
 //
 
 #import "GoDrinkVC.h"
-#import <MAMapKit/MAMapKit.h>
+#import <AMapNaviKit/MAMapKit.h>
 #import <AMapSearchKit/AMapSearchAPI.h>
 #import <AMapSearchKit/AMapCommonObj.h>
 #import "CustomAnnotationView.h"
-
+#import <AMapNaviKit/AMapNaviKit.h>
 #define kDefaultLocationZoomLevel       16.1
 #define kDefaultControlMargin           22
 #define kDefaultCalloutViewMargin       -8
-@interface GoDrinkVC ()<MAMapViewDelegate,AMapSearchDelegate,UISearchBarDelegate>{
+@interface GoDrinkVC ()<MAMapViewDelegate,AMapSearchDelegate,UISearchBarDelegate,AMapNaviManagerDelegate,AMapNaviViewControllerDelegate>{
 
     //地图显示
     MAMapView *_mamapView;
@@ -31,14 +31,20 @@
     
     //搜索框
     UISearchBar *_searchBar;
+    //路径导航按钮
+    UIButton *_roadFindBtn;
 }
-
+//路径规划
+@property (nonatomic, strong) AMapNaviManager *naviManager;
+//导航
+@property (nonatomic, strong) AMapNaviViewController *naviViewController;
 @end
 
 @implementation GoDrinkVC
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    [AMapNaviServices sharedServices].apiKey =@"b880f4d7a1fc3182b34e49f6f81e2790";
     //自定义右边导航栏的搜索框
     [self initNavSearch];
     //加载地图
@@ -46,6 +52,10 @@
     [self initSearchBtn];
     [self initSearch];
     [self initAttributes];
+    //路径规划
+    [self initNaviManager];
+    [self initRoadFindBtn];
+    [self initNaviViewController];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -118,6 +128,39 @@
         [self searchAction];
     }
 }
+/**
+ *  路径规划事件
+ */
+- (void)initNaviManager
+{
+    if (_naviManager == nil)
+    {
+        _naviManager = [[AMapNaviManager alloc] init];
+        [_naviManager setDelegate:self];
+    }
+}
+/**
+ *  导航
+ */
+- (void)initNaviViewController
+{
+    if (_naviViewController == nil)
+    {
+        _naviViewController = [[AMapNaviViewController alloc]
+                               initWithMapView:_mamapView delegate:self];
+    }
+}
+/**
+ *  路径导航按钮
+ */
+- (void)initRoadFindBtn{
+
+    _roadFindBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    _roadFindBtn.frame = CGRectMake(10, 100, 30, 30);
+    _roadFindBtn.backgroundColor = [UIColor redColor];
+    [_roadFindBtn addTarget:self action:@selector(startFindRoad) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_roadFindBtn];
+}
 #pragma mark-- 搜索框代理事件
 /**
  *  点击搜索按钮
@@ -132,7 +175,7 @@
 #pragma mark--全局键盘消失
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
 
-    
+    [_searchBar resignFirstResponder];
 }
 #pragma mark-----地图代理
 /**
@@ -287,4 +330,49 @@
     CGFloat nudgeBottom = fminf(0, CGRectGetMaxY(outerRect) - (CGRectGetMaxY(innerRect)));
     return CGSizeMake(nudgeLeft ?: nudgeRight, nudgeTop ?: nudgeBottom);
 }
+#pragma mark-路径规划方法
+- (void)routeCal
+{
+    AMapNaviPoint *startPoint = [AMapNaviPoint locationWithLatitude:_currentLocation.coordinate.latitude longitude:_currentLocation.coordinate.longitude];
+    AMapNaviPoint *endPoint = [AMapNaviPoint locationWithLatitude:39.983456 longitude:116.315495];
+    
+    NSArray *startPoints = @[startPoint];
+    NSArray *endPoints   = @[endPoint];
+    
+    //驾车路径规划（未设置途经点、导航策略为速度优先）
+    [_naviManager calculateDriveRouteWithStartPoints:startPoints endPoints:endPoints wayPoints:nil drivingStrategy:0];
+    
+    //步行路径规划
+    [self.naviManager calculateWalkRouteWithStartPoints:startPoints endPoints:endPoints];
+}
+/**
+ *  路径导航方法
+ */
+- (void)startFindRoad{
+
+    [self routeCal];
+}
+//路径规划成功的回调函数
+- (void)naviManagerOnCalculateRouteSuccess:(AMapNaviManager *)naviManager
+{
+    
+    //导航视图展示
+    [_naviManager presentNaviViewController:_naviViewController animated:YES];
+}
+
+//导航视图被展示出来的回调函数
+- (void)naviManager:(AMapNaviManager *)naviManager didPresentNaviViewController:(UIViewController *)naviViewController
+{
+    //调用startGPSNavi方法进行实时导航，调用startEmulatorNavi方法进行模拟导航
+    [_naviManager startGPSNavi];
+}
+- (void)naviViewControllerCloseButtonClicked:(AMapNaviViewController *)naviViewController
+{
+    
+    
+    [self.naviManager stopNavi];
+    
+    [self.naviManager dismissNaviViewControllerAnimated:YES];
+}
+
 @end
